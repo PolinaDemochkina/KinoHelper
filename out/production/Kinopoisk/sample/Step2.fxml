@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="500.0" xmlns="http://javafx.com/javafx/8.0.251" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.Step2Controller">
+    <children>
+        <Label layoutY="-2.0" prefHeight="44.0" prefWidth="500.0" style="-fx-background-color: #20241f;" text="Step 2: ..." textFill="#6aeb42">
+            <font>
+                <Font size="25.0" />
+            </font>
+        </Label>
+      <Button fx:id="PrevButton" layoutX="14.0" layoutY="269.0" mnemonicParsing="false" prefHeight="17.0" prefWidth="73.0" text="Previous" />
+      <Label fx:id="Data" alignment="TOP_CENTER" layoutX="7.0" layoutY="60.0" prefHeight="25.0" prefWidth="500.0" textOverrun="CLIP">
+         <font>
+            <Font size="16.0" />
+         </font></Label>
+      <ImageView fx:id="Poster" fitHeight="144.0" fitWidth="119.0" layoutX="203.0" layoutY="85.0" pickOnBounds="true" preserveRatio="true" />
+      <Button fx:id="WatchedAndDidNotLiked" layoutX="320.0" layoutY="232.0" mnemonicParsing="false" text="Смотрел и не понравилось" />
+      <Button fx:id="WatchedAndLiked" layoutX="14.0" layoutY="232.0" mnemonicParsing="false" text="Смотрел и понравилось" />
+      <Button fx:id="DidNotWatch" layoutX="210.0" layoutY="232.0" mnemonicParsing="false" text="Не смотрел" />
+    </children>
+</AnchorPane>
