@@ -11,7 +11,7 @@
 
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="300.0" prefWidth="500.0" xmlns="http://javafx.com/javafx/8.0.251" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.Step1Controller">
     <children>
-        <Label layoutY="-2.0" prefHeight="44.0" prefWidth="500.0" style="-fx-background-color: #20241f;" text="Step 1: Choosing genres" textFill="#6aeb42">
+        <Label layoutY="-2.0" prefHeight="44.0" prefWidth="500.0" style="-fx-background-color: #20241f;" text="Step 1: Choosing movie genres" textFill="#6aeb42">
             <font>
                 <Font size="25.0" />
             </font>

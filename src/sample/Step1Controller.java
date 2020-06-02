@@ -104,20 +104,26 @@ public class Step1Controller {
         }
 
         NextButton.setOnAction(event -> {
-            NextButton.getScene().getWindow().hide();
-            FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(getClass().getResource("/sample/Step2.fxml"));
-
             try {
                 CreateConnection();
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
-            try {
-                loader.load();
-            } catch (IOException e) {
-                e.printStackTrace();
+            NextButton.getScene().getWindow().hide();
+            FXMLLoader loader = new FXMLLoader();
+
+            boolean ok = false;
+
+            while (!ok) {
+                InputStream stream = getClass().getResourceAsStream("/sample/Step2.fxml");
+                try {
+                    loader.load(stream);
+                    stream.close();
+                    ok = true;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
 
             Parent root = loader.getRoot();
@@ -147,41 +153,47 @@ public class Step1Controller {
     }
 
     private void CreateConnection() throws IOException {
-        final URL url = new URL("https://api.themoviedb.org/3/genre/movie/list?api_key=d7abc796a142f8479c6c117dce5a0c41&language=en-US");
-        final HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        boolean ok = false;
 
-        con.setRequestMethod("GET");
-        con.setRequestProperty("Content-Type", "application/json");
-        con.setConnectTimeout(5000);
-        con.setReadTimeout(5000);
+        while (!ok) {
+            final URL url = new URL("https://api.themoviedb.org/3/genre/movie/list?api_key=d7abc796a142f8479c6c117dce5a0c41&language=en-US");
+            final HttpURLConnection con = (HttpURLConnection) url.openConnection();
 
-        try (InputStream in = new BufferedInputStream(con.getInputStream());
-             BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+            con.setRequestMethod("GET");
+            con.setRequestProperty("Content-Type", "application/json");
+            con.setConnectTimeout(5000);
+            con.setReadTimeout(5000);
 
-            JSONParser jsonParser = new JSONParser();
-            JSONObject jsonOfData = (JSONObject) jsonParser.parse(reader);
-            String strOfGenres = jsonOfData.get("genres").toString();
-            JSONArray jsonOfGenres = (JSONArray) jsonParser.parse(strOfGenres);
+            try (InputStream in = new BufferedInputStream(con.getInputStream());
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
 
-            for (Object jsonOfGenre : jsonOfGenres) {
-                String genre = jsonOfGenre.toString();
-                JSONObject jsonOfName = (JSONObject) jsonParser.parse(genre);
-                String name = jsonOfName.get("name").toString();
-                for (CheckBox check : genres) {
-                    if (check.isSelected() && check.getText().equals(name)) {
-                        String id = jsonOfName.get("id").toString();
-                        IDs.add(Integer.parseInt(id));
+                JSONParser jsonParser = new JSONParser();
+                JSONObject jsonOfData = (JSONObject) jsonParser.parse(reader);
+                String strOfGenres = jsonOfData.get("genres").toString();
+                JSONArray jsonOfGenres = (JSONArray) jsonParser.parse(strOfGenres);
+
+                for (Object jsonOfGenre : jsonOfGenres) {
+                    String genre = jsonOfGenre.toString();
+                    JSONObject jsonOfName = (JSONObject) jsonParser.parse(genre);
+                    String name = jsonOfName.get("name").toString();
+                    for (CheckBox check : genres) {
+                        if (check.isSelected() && check.getText().equals(name)) {
+                            String id = jsonOfName.get("id").toString();
+                            IDs.add(Integer.parseInt(id));
+                        }
                     }
                 }
+                if (Age.isSelected())
+                    age = true;
+
+                con.disconnect();
+
+                ok = true;
+
+            } catch (final Exception ex) {
+                System.out.println("Couldn't connect to the server. Retrying.. \nThere might be a problem with your " +
+                        "internet connection, please make sure your connection is stable.");
             }
-
-            con.disconnect();
-
-            if (Age.isSelected())
-                age = true;
-
-        } catch (final Exception ex) {
-            ex.printStackTrace();
         }
     }
 

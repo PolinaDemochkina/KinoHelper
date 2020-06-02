@@ -120,30 +120,35 @@ public class Step2Controller {
     }
 
     private void Connection(int genre) throws IOException, ParseException {
-        if (i == 0) {
-            final URL url = new URL("https://api.themoviedb.org/3/discover/movie?api_key=" +
-                    "d7abc796a142f8479c6c117dce5a0c41&language=en-US&sort_by=popularity.desc&" +
-                    "include_adult=" + Step1Controller.age + "&include_video=false&page=" + page + "&with_genres=" + genre);
-            final HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        boolean ok = false;
 
-            con.setRequestMethod("GET");
-            con.setRequestProperty("Content-Type", "application/json");
-            con.setConnectTimeout(5000);
-            con.setReadTimeout(5000);
+        while (!ok) {
+            if (i == 0) {
+                final URL url = new URL("https://api.themoviedb.org/3/discover/movie?api_key=" +
+                        "d7abc796a142f8479c6c117dce5a0c41&language=en-US&sort_by=popularity.desc&" +
+                        "include_adult=" + Step1Controller.age + "&include_video=false&page=" + page + "&with_genres=" + genre);
+                final HttpURLConnection con = (HttpURLConnection) url.openConnection();
 
-            try (InputStream in = new BufferedInputStream(con.getInputStream());
-                 BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+                con.setRequestMethod("GET");
+                con.setRequestProperty("Content-Type", "application/json");
+                con.setConnectTimeout(5000);
+                con.setReadTimeout(5000);
 
-                JSONParser jsonParser = new JSONParser();
-                JSONObject jsonOfData = (JSONObject) jsonParser.parse(reader);
-                String strOfResults = jsonOfData.get("results").toString();
-                jsonOfFilms = (JSONArray) jsonParser.parse(strOfResults);
+                try (InputStream in = new BufferedInputStream(con.getInputStream());
+                     BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
 
-                con.disconnect();
+                    JSONParser jsonParser = new JSONParser();
+                    JSONObject jsonOfData = (JSONObject) jsonParser.parse(reader);
+                    String strOfResults = jsonOfData.get("results").toString();
+                    jsonOfFilms = (JSONArray) jsonParser.parse(strOfResults);
 
-            } catch (final Exception ex) {
-                ex.printStackTrace();
+                    con.disconnect();
+
+                    ok = true;
+                } catch (final Exception ignored) { }
             }
+            else
+                ok = true;
         }
 
         ParseJSON(jsonOfFilms);
@@ -156,8 +161,14 @@ public class Step2Controller {
             }
         }
         if (!flag) {
-            Image poster = new Image("http://image.tmdb.org/t/p/original" + poster_path);
-            Poster.setImage(poster);
+            if (poster_path != null) {
+                Image poster = new Image("http://image.tmdb.org/t/p/original" + poster_path);
+                Poster.setImage(poster);
+            }else {
+                InputStream input = getClass().getResourceAsStream("/Images/ErrorPoster.jpg");
+                Image poster = new Image(input);
+                Poster.setImage(poster);
+            }
 
             Data.setText(title + " (" + release_date + ")");
         }
@@ -167,6 +178,12 @@ public class Step2Controller {
         if (films.size() == 6)
             NextStep();
         else {
+            if (i == 5) {
+                page++;
+                i = 0;
+                randomNumbers.removeAllElements();
+                GetRandomNumbers();
+            }
             if (Step1Controller.IDs.size() == 1) {
                 Connection(Step1Controller.IDs.get(0));
             } else if (Step1Controller.IDs.size() == 2) {
@@ -182,69 +199,78 @@ public class Step2Controller {
                 else
                     Connection(Step1Controller.IDs.get(2));
             }
-            i++;
-
-            if (i == 6) {
-                page++;
-                i = 0;
-                randomNumbers.removeAllElements();
-                GetRandomNumbers();
-            }
         }
     }
 
     private void AddFilm (int ID) throws IOException, ParseException {
-        final URL url = new URL("https://api.themoviedb.org/3/movie/" + ID + "/" +
-                "similar?api_key=d7abc796a142f8479c6c117dce5a0c41&language=en-US&page=1");
-        final HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        boolean ok = false;
 
-        con.setRequestMethod("GET");
-        con.setRequestProperty("Content-Type", "application/json");
-        con.setConnectTimeout(5000);
-        con.setReadTimeout(5000);
+        while (!ok) {
+            final URL url = new URL("https://api.themoviedb.org/3/movie/" + ID + "/" +
+                    "similar?api_key=d7abc796a142f8479c6c117dce5a0c41&language=en-US&page=1");
+            final HttpURLConnection con = (HttpURLConnection) url.openConnection();
 
-        try (InputStream in = new BufferedInputStream(con.getInputStream());
-             BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+            con.setRequestMethod("GET");
+            con.setRequestProperty("Content-Type", "application/json");
+            con.setConnectTimeout(5000);
+            con.setReadTimeout(5000);
 
-            JSONParser jsonParser = new JSONParser();
-            JSONObject jsonOfData = (JSONObject) jsonParser.parse(reader);
-            String strOfResults = jsonOfData.get("results").toString();
+            try (InputStream in = new BufferedInputStream(con.getInputStream());
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
 
-            if (!strOfResults.equals("[]")) {
-                JSONArray NewJsonOfFilms = (JSONArray) jsonParser.parse(strOfResults);
-                if (randomNumbers.get(i) < NewJsonOfFilms.size()) {
+                JSONParser jsonParser = new JSONParser();
+                JSONObject jsonOfData = (JSONObject) jsonParser.parse(reader);
+                String strOfResults = jsonOfData.get("results").toString();
 
-                    ParseJSON(NewJsonOfFilms);
+                if (!strOfResults.equals("[]")) {
+                    JSONArray NewJsonOfFilms = (JSONArray) jsonParser.parse(strOfResults);
+                    if (randomNumbers.get(i) < NewJsonOfFilms.size()) {
 
-                    boolean flag = false;
-                    for (String skipFilm : SkipFilms) {
-                        if (title.equals(skipFilm)) {
-                            flag = true;
-                            break;
+                        ParseJSON(NewJsonOfFilms);
+
+                        boolean flag = false;
+                        for (String skipFilm : SkipFilms) {
+                            if (title.equals(skipFilm)) {
+                                flag = true;
+                                break;
+                            }
+                        }
+                        if (!flag) {
+                            Film film = new Film(title, release_date, Integer.parseInt(id));
+                            films.add(film);
+
+                            if (poster_path != null) {
+                                Image poster = new Image("http://image.tmdb.org/t/p/original" + poster_path);
+                                images.add(poster);
+                            }else {
+                                InputStream input = getClass().getResourceAsStream("/Images/ErrorPoster.jpg");
+                                Image poster = new Image(input);
+                                images.add(poster);
+                            }
+                            SkipFilms.add(title);
                         }
                     }
-                    if (!flag) {
-                        Film film = new Film(title, release_date, Integer.parseInt(id));
-                        Image poster = new Image("http://image.tmdb.org/t/p/original" + poster_path);
-                        films.add(film);
-                        images.add(poster);
-                        SkipFilms.add(title);
-                    }
                 }
+                con.disconnect();
+
+                i++;
+                ok = true;
+            } catch (final Exception e) {
+                System.out.println("Couldn't connect to the server. Retrying.. \nThere might be a problem with your " +
+                        "internet connection, please make sure your connection is stable.");
             }
-            con.disconnect();
-        } catch (final Exception e) {
-            e.printStackTrace();
         }
         Check();
     }
 
     private void DoNotLiked() throws IOException, ParseException {
         SkipFilms.add(title);
+        i++;
         Check();
     }
 
     private void DoNotWatched() throws IOException, ParseException {
+        i++;
         Check();
     }
 
@@ -274,8 +300,13 @@ public class Step2Controller {
         JSONObject jsonOfFilm = (JSONObject) jsonParser.parse(StrOfFilm);
         title = jsonOfFilm.get("title").toString();
         release_date = jsonOfFilm.get("release_date").toString();
-        poster_path = jsonOfFilm.get("poster_path").toString();
         id = jsonOfFilm.get("id").toString();
+        try {
+            poster_path = jsonOfFilm.get("poster_path").toString();
+        }
+        catch (Exception e) {
+            poster_path = null;
+        }
     }
 
     private void GetRandomNumbers() {
@@ -283,7 +314,7 @@ public class Step2Controller {
         Random rand = new Random();
         for (int i = 0; i < 6; i++) {
             int number = rand.nextInt(20);
-            for (Integer randomNumber : randomNumbers) {
+            for (int randomNumber : randomNumbers) {
                 if (number == randomNumber) {
                     flag = true;
                     break;
