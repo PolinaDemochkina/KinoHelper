@@ -1,8 +1,6 @@
 package sample;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.Vector;
 
 import javafx.fxml.FXML;
@@ -14,6 +12,7 @@ import javafx.stage.Stage;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 public class Step1Controller {
     @FXML
@@ -70,7 +69,7 @@ public class Step1Controller {
     @FXML
     private CheckBox Age;
 
-    private final CheckBox[] genres = new CheckBox[16];
+    private final Vector<CheckBox> genres = new Vector<>(16);
 
     static boolean age = false;
 
@@ -82,22 +81,22 @@ public class Step1Controller {
     void initialize() {
         NextButton.setDisable(true);
 
-        genres[0] = AdventureCheck;
-        genres[1] = ComedyCheck;
-        genres[2] = ThrillerCheck;
-        genres[3] = HorrorsCheck;
-        genres[4] = MysteryCheck;
-        genres[5] = ActionCheck;
-        genres[6] = CartoonCheck;
-        genres[7] = FantasyCheck;
-        genres[8] = RomanceCheck;
-        genres[9] = ScienceCheck;
-        genres[10] = HistoryCheck;
-        genres[11] = DocumentaryCheck;
-        genres[12] = DramaCheck;
-        genres[13] = FamilyCheck;
-        genres[14] = CrimeCheck;
-        genres[15] = WarCheck;
+        genres.add(AdventureCheck);
+        genres.add(ComedyCheck);
+        genres.add(ThrillerCheck);
+        genres.add(HorrorsCheck);
+        genres.add(MysteryCheck);
+        genres.add(ActionCheck);
+        genres.add(CartoonCheck);
+        genres.add(FantasyCheck);
+        genres.add(RomanceCheck);
+        genres.add(ScienceCheck);
+        genres.add(HistoryCheck);
+        genres.add(DocumentaryCheck);
+        genres.add(DramaCheck);
+        genres.add(FamilyCheck);
+        genres.add(CrimeCheck);
+        genres.add(WarCheck);
 
         for (CheckBox check : genres) {
             check.setOnAction(event -> BlockCheckboxes(genres));
@@ -105,7 +104,7 @@ public class Step1Controller {
 
         NextButton.setOnAction(event -> {
             try {
-                CreateConnection();
+                Connection();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -128,13 +127,15 @@ public class Step1Controller {
 
             Parent root = loader.getRoot();
             stage = new Stage();
+            stage.setTitle("KinoHelper");
             stage.setScene(new Scene(root));
             stage.setResizable(false);
             stage.show();
         });
     }
 
-    private void BlockCheckboxes(CheckBox[] genres) {
+    // Функция блокировки(Disable) чекбоксов
+    private void BlockCheckboxes(Vector<CheckBox> genres) {
         int count = 0;
         for (CheckBox check : genres) {
             check.setDisable(false);
@@ -152,49 +153,26 @@ public class Step1Controller {
         NextButton.setDisable(count == 0);
     }
 
-    private void CreateConnection() throws IOException {
-        boolean ok = false;
+    // Функция отправляющая запрос и парсящая ответ
+    private void Connection() throws IOException, ParseException {
 
-        while (!ok) {
-            final URL url = new URL("https://api.themoviedb.org/3/genre/movie/list?api_key=d7abc796a142f8479c6c117dce5a0c41&language=en-US");
-            final HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        String link = "https://api.themoviedb.org/3/genre/movie/list?api_key=d7abc796a142f8479c6c117dce5a0c41&language=en-US";
 
-            con.setRequestMethod("GET");
-            con.setRequestProperty("Content-Type", "application/json");
-            con.setConnectTimeout(5000);
-            con.setReadTimeout(5000);
+        JSONArray jsonOfGenres = BackendUtil.Connection(link, "genres");
 
-            try (InputStream in = new BufferedInputStream(con.getInputStream());
-                 BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-
-                JSONParser jsonParser = new JSONParser();
-                JSONObject jsonOfData = (JSONObject) jsonParser.parse(reader);
-                String strOfGenres = jsonOfData.get("genres").toString();
-                JSONArray jsonOfGenres = (JSONArray) jsonParser.parse(strOfGenres);
-
-                for (Object jsonOfGenre : jsonOfGenres) {
-                    String genre = jsonOfGenre.toString();
-                    JSONObject jsonOfName = (JSONObject) jsonParser.parse(genre);
-                    String name = jsonOfName.get("name").toString();
-                    for (CheckBox check : genres) {
-                        if (check.isSelected() && check.getText().equals(name)) {
-                            String id = jsonOfName.get("id").toString();
-                            IDs.add(Integer.parseInt(id));
-                        }
-                    }
+        for (Object jsonOfGenre : jsonOfGenres) {
+            JSONParser jsonParser = new JSONParser();
+            String genre = jsonOfGenre.toString();
+            JSONObject jsonOfName = (JSONObject) jsonParser.parse(genre);
+            String name = jsonOfName.get("name").toString();
+            for (CheckBox check : genres) {
+                if (check.isSelected() && check.getText().equals(name)) {
+                    String id = jsonOfName.get("id").toString();
+                    IDs.add(Integer.parseInt(id));
                 }
-                if (Age.isSelected())
-                    age = true;
-
-                con.disconnect();
-
-                ok = true;
-
-            } catch (final Exception ex) {
-                System.out.println("Couldn't connect to the server. Retrying.. \nThere might be a problem with your " +
-                        "internet connection, please make sure your connection is stable.");
             }
         }
+        if (Age.isSelected())
+            age = true;
     }
-
 }

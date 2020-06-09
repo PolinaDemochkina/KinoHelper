@@ -1,8 +1,6 @@
 package sample;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.Random;
 import java.util.Vector;
 
@@ -19,6 +17,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+
+import java.util.ResourceBundle;
 
 public class Step2Controller {
 
@@ -40,45 +40,48 @@ public class Step2Controller {
     @FXML
     private Button DidNotWatch;
 
-    static Vector <Film> films = new Vector<>(1, 1);
+    @FXML
+    private Label Counter;
 
-    static Vector <Image> images = new Vector<>(6);
+    private static ResourceBundle myBundle = ResourceBundle.getBundle("awesomeBundle");
+
+    // Вектор рекомендуемых фильмов
+    static Vector<Film> films = new Vector<>(6);
+
+    // Вектор постеров к рекомендуемым фильмам
+    static Vector<Image> images = new Vector<>(6);
 
     private String title, release_date, poster_path, id;
 
     private static int page = 1, i = 0;
 
-    static final Vector <Integer> randomNumbers = new Vector<>(6);
+    static final Vector<Integer> randomNumbers = new Vector<>(6);
 
-    static final Vector <String> SkipFilms = new Vector<>(1, 1);
+    // Вектор фильмов кооторые пользователь уже смотрели
+    static final Vector<String> SkipFilms = new Vector<>(1, 1);
 
     private JSONArray jsonOfFilms = new JSONArray();
 
     @FXML
     void initialize() throws IOException, ParseException {
+        Data.setWrapText(true);
         GetRandomNumbers();
         Check();
 
         WatchedAndLiked.setOnAction(event -> {
             try {
                 AddFilm(Integer.parseInt(id));
-            } catch (IOException | ParseException e) {
-                e.printStackTrace();
-            }
+            } catch (IOException | ParseException ignored) {}
         });
         DidNotWatch.setOnAction(event -> {
             try {
                 DoNotWatched();
-            } catch (IOException | ParseException e) {
-                e.printStackTrace();
-            }
+            } catch (IOException | ParseException ignored) {}
         });
         WatchedAndDidNotLiked.setOnAction(event -> {
             try {
                 DoNotLiked();
-            } catch (IOException | ParseException e) {
-                e.printStackTrace();
-            }
+            } catch (IOException | ParseException ignored) {}
         });
 
         PrevButton.setOnAction(event -> {
@@ -112,44 +115,22 @@ public class Step2Controller {
         String date;
         int id;
 
-        Film(String name, String date, int id){
+        Film(String name, String date, int id) {
             this.name = name;
             this.date = date;
             this.id = id;
         }
     }
-
+    
+    // Функция отправляющая запрос
     private void Connection(int genre) throws IOException, ParseException {
-        boolean ok = false;
 
-        while (!ok) {
-            if (i == 0) {
-                final URL url = new URL("https://api.themoviedb.org/3/discover/movie?api_key=" +
-                        "d7abc796a142f8479c6c117dce5a0c41&language=en-US&sort_by=popularity.desc&" +
-                        "include_adult=" + Step1Controller.age + "&include_video=false&page=" + page + "&with_genres=" + genre);
-                final HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        String link = "https://api.themoviedb.org/3/discover/movie?api_key=" +
+                "d7abc796a142f8479c6c117dce5a0c41&language=en-US&sort_by=popularity.desc&" +
+                "include_adult=" + Step1Controller.age + "&include_video=false&page=" + page + "&with_genres=" + genre;
 
-                con.setRequestMethod("GET");
-                con.setRequestProperty("Content-Type", "application/json");
-                con.setConnectTimeout(5000);
-                con.setReadTimeout(5000);
-
-                try (InputStream in = new BufferedInputStream(con.getInputStream());
-                     BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-
-                    JSONParser jsonParser = new JSONParser();
-                    JSONObject jsonOfData = (JSONObject) jsonParser.parse(reader);
-                    String strOfResults = jsonOfData.get("results").toString();
-                    jsonOfFilms = (JSONArray) jsonParser.parse(strOfResults);
-
-                    con.disconnect();
-
-                    ok = true;
-                } catch (final Exception ignored) { }
-            }
-            else
-                ok = true;
-        }
+        if (i == 0)
+            jsonOfFilms = BackendUtil.Connection(link, "results");
 
         ParseJSON(jsonOfFilms);
 
@@ -164,17 +145,19 @@ public class Step2Controller {
             if (poster_path != null) {
                 Image poster = new Image("http://image.tmdb.org/t/p/original" + poster_path);
                 Poster.setImage(poster);
-            }else {
+            } else {
                 InputStream input = getClass().getResourceAsStream("/Images/ErrorPoster.jpg");
                 Image poster = new Image(input);
                 Poster.setImage(poster);
             }
 
             Data.setText(title + " (" + release_date + ")");
+            Counter.setText(films.size() + "/6");
         }
     }
 
-    private void Check() throws IOException, ParseException {
+    // Функция проверяющая не набралось ли достаточное количество фильмов
+    private void Check () throws IOException, ParseException {
         if (films.size() == 6)
             NextStep();
         else {
@@ -202,79 +185,55 @@ public class Step2Controller {
         }
     }
 
-    private void AddFilm (int ID) throws IOException, ParseException {
-        boolean ok = false;
+    // Функция отправляющая запрос, принимающая рекомендуемый фильм добавляющая фильм в вектор film
+    private void AddFilm ( int ID) throws IOException, ParseException {
+        String link = "https://api.themoviedb.org/3/movie/" + ID + "/" +
+                "similar?api_key=d7abc796a142f8479c6c117dce5a0c41&language=en-US&page=1";
 
-        while (!ok) {
-            final URL url = new URL("https://api.themoviedb.org/3/movie/" + ID + "/" +
-                    "similar?api_key=d7abc796a142f8479c6c117dce5a0c41&language=en-US&page=1");
-            final HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        JSONArray NewJsonOfFilms = BackendUtil.Connection(link, "results");
+        if (randomNumbers.get(i) < NewJsonOfFilms.size()) {
 
-            con.setRequestMethod("GET");
-            con.setRequestProperty("Content-Type", "application/json");
-            con.setConnectTimeout(5000);
-            con.setReadTimeout(5000);
+            ParseJSON(NewJsonOfFilms);
 
-            try (InputStream in = new BufferedInputStream(con.getInputStream());
-                 BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-
-                JSONParser jsonParser = new JSONParser();
-                JSONObject jsonOfData = (JSONObject) jsonParser.parse(reader);
-                String strOfResults = jsonOfData.get("results").toString();
-
-                if (!strOfResults.equals("[]")) {
-                    JSONArray NewJsonOfFilms = (JSONArray) jsonParser.parse(strOfResults);
-                    if (randomNumbers.get(i) < NewJsonOfFilms.size()) {
-
-                        ParseJSON(NewJsonOfFilms);
-
-                        boolean flag = false;
-                        for (String skipFilm : SkipFilms) {
-                            if (title.equals(skipFilm)) {
-                                flag = true;
-                                break;
-                            }
-                        }
-                        if (!flag) {
-                            Film film = new Film(title, release_date, Integer.parseInt(id));
-                            films.add(film);
-
-                            if (poster_path != null) {
-                                Image poster = new Image("http://image.tmdb.org/t/p/original" + poster_path);
-                                images.add(poster);
-                            }else {
-                                InputStream input = getClass().getResourceAsStream("/Images/ErrorPoster.jpg");
-                                Image poster = new Image(input);
-                                images.add(poster);
-                            }
-                            SkipFilms.add(title);
-                        }
-                    }
+            boolean flag = false;
+            for (String skipFilm : SkipFilms) {
+                if (title.equals(skipFilm)) {
+                    flag = true;
+                    break;
                 }
-                con.disconnect();
+            }
+            if (!flag) {
+                Film film = new Film(title, release_date, Integer.parseInt(id));
+                films.add(film);
 
-                i++;
-                ok = true;
-            } catch (final Exception e) {
-                System.out.println("Couldn't connect to the server. Retrying.. \nThere might be a problem with your " +
-                        "internet connection, please make sure your connection is stable.");
+                if (poster_path != null) {
+                    Image poster = new Image("http://image.tmdb.org/t/p/original" + poster_path);
+                    images.add(poster);
+                } else {
+                    InputStream input = getClass().getResourceAsStream("/Images/ErrorPoster.jpg");
+                    Image poster = new Image(input);
+                    images.add(poster);
+                }
+                SkipFilms.add(title);
             }
         }
+        i++;
         Check();
     }
 
-    private void DoNotLiked() throws IOException, ParseException {
+    private void DoNotLiked () throws IOException, ParseException {
         SkipFilms.add(title);
         i++;
         Check();
     }
 
-    private void DoNotWatched() throws IOException, ParseException {
+    private void DoNotWatched () throws IOException, ParseException {
         i++;
         Check();
     }
 
-    private void NextStep() {
+    // Функция перехода на третий шаг
+    private void NextStep () {
         PrevButton.getScene().getWindow().hide();
         FXMLLoader loader = new FXMLLoader();
         loader.setLocation(getClass().getResource("/sample/Step3.fxml"));
@@ -289,12 +248,14 @@ public class Step2Controller {
         page = 1;
         Parent root = loader.getRoot();
         Stage Stage = new Stage();
+        Stage.setTitle("KinoHelper");
         Stage.setScene(new Scene(root));
         Stage.setResizable(false);
         Stage.showAndWait();
     }
 
-    private void ParseJSON(JSONArray arr) throws ParseException {
+    // Функция парсящая приходящие их запросов JSON'ы
+    private void ParseJSON (JSONArray arr) throws ParseException {
         JSONParser jsonParser = new JSONParser();
         String StrOfFilm = arr.get(randomNumbers.get(i)).toString();
         JSONObject jsonOfFilm = (JSONObject) jsonParser.parse(StrOfFilm);
@@ -303,13 +264,13 @@ public class Step2Controller {
         id = jsonOfFilm.get("id").toString();
         try {
             poster_path = jsonOfFilm.get("poster_path").toString();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             poster_path = null;
         }
     }
 
-    private void GetRandomNumbers() {
+    // Функция наполняющая вектор randomNumbers случайными числами
+    private void GetRandomNumbers () {
         boolean flag = false;
         Random rand = new Random();
         for (int i = 0; i < 6; i++) {

@@ -1,15 +1,12 @@
 package sample;
 
 import java.io.IOException;
-import java.net.URL;
-import java.util.ResourceBundle;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 
@@ -29,6 +26,9 @@ public class Step3Controller {
 
     @FXML
     private Button NextButton;
+
+    @FXML
+    private Label Countrer;
 
     private static int i = 0;
 
@@ -77,5 +77,6 @@ public class Step3Controller {
     private void GetFilm() {
         Data.setText(Step2Controller.films.get(i).name + " (" + Step2Controller.films.get(i).date + ")");
         Poster.setImage(Step2Controller.images.get(i));
+        Countrer.setText(i + 1 + "/6");
     }
 }

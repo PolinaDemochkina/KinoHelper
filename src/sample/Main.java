@@ -8,10 +8,11 @@ import javafx.stage.Stage;
 
 public class Main extends Application {
 
+    // Создание первого(основного) окна
     @Override
     public void start(Stage primaryStage) throws Exception{
         Parent root = FXMLLoader.load(getClass().getResource("Step1.fxml"));
-        primaryStage.setTitle("Hello World");
+        primaryStage.setTitle("KinoHelper");
         primaryStage.setScene(new Scene(root, 500, 300));
         primaryStage.setResizable(false);
         primaryStage.show();
