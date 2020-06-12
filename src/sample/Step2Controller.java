@@ -1,7 +1,9 @@
 package sample;
 
 import java.io.*;
+import java.text.MessageFormat;
 import java.util.Random;
+import java.util.ResourceBundle;
 import java.util.Vector;
 
 import javafx.fxml.FXML;
@@ -18,8 +20,10 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import java.util.ResourceBundle;
-
+/**
+ * Second window
+ * @autor Polina Demochkina
+ */
 public class Step2Controller {
 
     @FXML
@@ -43,12 +47,14 @@ public class Step2Controller {
     @FXML
     private Label Counter;
 
-    private static ResourceBundle myBundle = ResourceBundle.getBundle("awesomeBundle");
-
-    // Вектор рекомендуемых фильмов
+    /**
+     * Vector of recommended movies
+     */
     static Vector<Film> films = new Vector<>(6);
 
-    // Вектор постеров к рекомендуемым фильмам
+    /**
+     * Vector of posters for the recommended movies
+     */
     static Vector<Image> images = new Vector<>(6);
 
     private String title, release_date, poster_path, id;
@@ -57,10 +63,14 @@ public class Step2Controller {
 
     static final Vector<Integer> randomNumbers = new Vector<>(6);
 
-    // Вектор фильмов кооторые пользователь уже смотрели
+    /**
+     * Vector of movies that the user had already watched
+     */
     static final Vector<String> SkipFilms = new Vector<>(1, 1);
 
     private JSONArray jsonOfFilms = new JSONArray();
+
+    private final ResourceBundle resourceStep2 = ResourceBundle.getBundle("sample.resources");
 
     @FXML
     void initialize() throws IOException, ParseException {
@@ -70,7 +80,7 @@ public class Step2Controller {
 
         WatchedAndLiked.setOnAction(event -> {
             try {
-                AddFilm(Integer.parseInt(id));
+                AddFilm();
             } catch (IOException | ParseException ignored) {}
         });
         DidNotWatch.setOnAction(event -> {
@@ -110,24 +120,36 @@ public class Step2Controller {
         });
     }
 
+    /**
+     * Movie class
+     */
     public static class Film {
         String name;
         String date;
         int id;
 
+        /**
+         * Constructor - new movie creation
+         * @param name - movie title
+         * @param date - release date
+         * @param id - movie id in the database
+         */
         Film(String name, String date, int id) {
             this.name = name;
             this.date = date;
             this.id = id;
         }
     }
-    
-    // Функция отправляющая запрос
+
+    /**
+     * Function to receive a movie and display it
+     * @param genre - genre ID
+     * @throws IOException
+     * @throws ParseException - when an erroneous result is returned by the request
+     */
     private void Connection(int genre) throws IOException, ParseException {
 
-        String link = "https://api.themoviedb.org/3/discover/movie?api_key=" +
-                "d7abc796a142f8479c6c117dce5a0c41&language=en-US&sort_by=popularity.desc&" +
-                "include_adult=" + Step1Controller.age + "&include_video=false&page=" + page + "&with_genres=" + genre;
+        String link = MessageFormat.format(resourceStep2.getString("Step2.Connection.link"), Step1Controller.age, page, String.valueOf(genre));
 
         if (i == 0)
             jsonOfFilms = BackendUtil.Connection(link, "results");
@@ -143,10 +165,10 @@ public class Step2Controller {
         }
         if (!flag) {
             if (poster_path != null) {
-                Image poster = new Image("http://image.tmdb.org/t/p/original" + poster_path);
+                Image poster = new Image(MessageFormat.format(resourceStep2.getString("Step2.poster_path"), poster_path));
                 Poster.setImage(poster);
             } else {
-                InputStream input = getClass().getResourceAsStream("/Images/ErrorPoster.jpg");
+                InputStream input = getClass().getResourceAsStream(resourceStep2.getString("Step2.poster_path.error"));
                 Image poster = new Image(input);
                 Poster.setImage(poster);
             }
@@ -156,7 +178,11 @@ public class Step2Controller {
         }
     }
 
-    // Функция проверяющая не набралось ли достаточное количество фильмов
+    /**
+     * Function to check if enough movies have been selected. If not, the Connection function is called.
+     * @throws IOException
+     * @throws ParseException - when an erroneous result is returned by the request
+     */
     private void Check () throws IOException, ParseException {
         if (films.size() == 6)
             NextStep();
@@ -185,10 +211,13 @@ public class Step2Controller {
         }
     }
 
-    // Функция отправляющая запрос, принимающая рекомендуемый фильм добавляющая фильм в вектор film
-    private void AddFilm ( int ID) throws IOException, ParseException {
-        String link = "https://api.themoviedb.org/3/movie/" + ID + "/" +
-                "similar?api_key=d7abc796a142f8479c6c117dce5a0c41&language=en-US&page=1";
+    /**
+     * "Watched and liked" button. The function sends a request, receives the recommended movie and adds it to the film vector.
+     * @throws IOException
+     * @throws ParseException - when an erroneous result is returned by the request
+     */
+    private void AddFilm () throws IOException, ParseException {
+        String link = MessageFormat.format(resourceStep2.getString("Step2.AddFilm.link"), id);
 
         JSONArray NewJsonOfFilms = BackendUtil.Connection(link, "results");
         if (randomNumbers.get(i) < NewJsonOfFilms.size()) {
@@ -207,10 +236,10 @@ public class Step2Controller {
                 films.add(film);
 
                 if (poster_path != null) {
-                    Image poster = new Image("http://image.tmdb.org/t/p/original" + poster_path);
+                    Image poster = new Image(MessageFormat.format(resourceStep2.getString("Step2.poster_path"), poster_path));
                     images.add(poster);
                 } else {
-                    InputStream input = getClass().getResourceAsStream("/Images/ErrorPoster.jpg");
+                    InputStream input = getClass().getResourceAsStream(resourceStep2.getString("Step2.poster_path.error"));
                     Image poster = new Image(input);
                     images.add(poster);
                 }
@@ -221,18 +250,31 @@ public class Step2Controller {
         Check();
     }
 
+
+    /**
+     * "Watched and disliked" button
+     * @throws IOException
+     * @throws ParseException
+     */
     private void DoNotLiked () throws IOException, ParseException {
         SkipFilms.add(title);
         i++;
         Check();
     }
 
+    /**
+     * "Didn't watch" button
+     * @throws IOException
+     * @throws ParseException
+     */
     private void DoNotWatched () throws IOException, ParseException {
         i++;
         Check();
     }
 
-    // Функция перехода на третий шаг
+    /**
+     * Function to switch to the third window
+     */
     private void NextStep () {
         PrevButton.getScene().getWindow().hide();
         FXMLLoader loader = new FXMLLoader();
@@ -254,7 +296,11 @@ public class Step2Controller {
         Stage.showAndWait();
     }
 
-    // Функция парсящая приходящие их запросов JSON'ы
+    /**
+     * Function to parse JSONs received from requests
+     * @param arr - JSON dictionary of movies returned by a request
+     * @throws ParseException - when an erroneous result is returned by the request for image
+     */
     private void ParseJSON (JSONArray arr) throws ParseException {
         JSONParser jsonParser = new JSONParser();
         String StrOfFilm = arr.get(randomNumbers.get(i)).toString();
@@ -269,7 +315,9 @@ public class Step2Controller {
         }
     }
 
-    // Функция наполняющая вектор randomNumbers случайными числами
+    /**
+     * Function to fill the randomNumbers vector
+     */
     private void GetRandomNumbers () {
         boolean flag = false;
         Random rand = new Random();

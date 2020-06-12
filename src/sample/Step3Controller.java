@@ -10,6 +10,10 @@ import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 
+/**
+ * Third window
+ * @autor Polina Demochkina
+ */
 public class Step3Controller {
 
     @FXML
@@ -28,7 +32,7 @@ public class Step3Controller {
     private Button NextButton;
 
     @FXML
-    private Label Countrer;
+    private Label Counter;
 
     private static int i = 0;
 
@@ -70,13 +74,17 @@ public class Step3Controller {
             Step2Controller.images.removeAllElements();
             Step2Controller.randomNumbers.removeAllElements();
             Step2Controller.SkipFilms.removeAllElements();
+            Step3Controller.i = 0;
             Step1Controller.stage.show();
         });
     }
 
+    /**
+     * Function to get a movie from the vector and display it
+     */
     private void GetFilm() {
         Data.setText(Step2Controller.films.get(i).name + " (" + Step2Controller.films.get(i).date + ")");
         Poster.setImage(Step2Controller.images.get(i));
-        Countrer.setText(i + 1 + "/6");
+        Counter.setText(i + 1 + "/6");
     }
 }

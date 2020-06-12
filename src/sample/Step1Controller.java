@@ -1,6 +1,7 @@
 package sample;
 
 import java.io.*;
+import java.util.ResourceBundle;
 import java.util.Vector;
 
 import javafx.fxml.FXML;
@@ -14,6 +15,10 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+/**
+ * First window
+ * @autor Polina Demochkina
+ */
 public class Step1Controller {
     @FXML
     private Button NextButton;
@@ -69,13 +74,21 @@ public class Step1Controller {
     @FXML
     private CheckBox Age;
 
+    /**
+     * All available genres
+     */
     private final Vector<CheckBox> genres = new Vector<>(16);
 
     static boolean age = false;
 
     static Stage stage;
 
+    /**
+     * Genre IDs
+     */
     static Vector<Integer> IDs = new Vector<>(1, 1);
+
+    private final ResourceBundle resourceStep1 = ResourceBundle.getBundle("sample.resources");
 
     @FXML
     void initialize() {
@@ -103,26 +116,20 @@ public class Step1Controller {
         }
 
         NextButton.setOnAction(event -> {
+            NextButton.getScene().getWindow().hide();
+            FXMLLoader loader = new FXMLLoader();
+            loader.setLocation(getClass().getResource("/sample/Step2.fxml"));
+
             try {
                 Connection();
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
-            NextButton.getScene().getWindow().hide();
-            FXMLLoader loader = new FXMLLoader();
-
-            boolean ok = false;
-
-            while (!ok) {
-                InputStream stream = getClass().getResourceAsStream("/sample/Step2.fxml");
-                try {
-                    loader.load(stream);
-                    stream.close();
-                    ok = true;
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            try {
+                loader.load();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
 
             Parent root = loader.getRoot();
@@ -134,7 +141,10 @@ public class Step1Controller {
         });
     }
 
-    // Функция блокировки(Disable) чекбоксов
+    /**
+     * Function for disabling checkboxes
+     * @param genres - vector of available genres
+     */
     private void BlockCheckboxes(Vector<CheckBox> genres) {
         int count = 0;
         for (CheckBox check : genres) {
@@ -153,10 +163,14 @@ public class Step1Controller {
         NextButton.setDisable(count == 0);
     }
 
-    // Функция отправляющая запрос и парсящая ответ
+    /**
+     * Function for sending a request and parsing the result
+     * @throws IOException
+     * @throws ParseException - when an erroneous result is returned by the request
+     */
     private void Connection() throws IOException, ParseException {
 
-        String link = "https://api.themoviedb.org/3/genre/movie/list?api_key=d7abc796a142f8479c6c117dce5a0c41&language=en-US";
+        String link = resourceStep1.getString("Step1.Connection.link");
 
         JSONArray jsonOfGenres = BackendUtil.Connection(link, "genres");
 

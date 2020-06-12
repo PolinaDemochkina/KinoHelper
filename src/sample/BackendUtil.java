@@ -3,15 +3,24 @@ package sample;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+/**
+ * Class for backend utilities
+ * @autor Polina Demochkina
+ */
 public class BackendUtil {
-    // Функция отправляющая запросы
-    static public JSONArray Connection(String link, String keyword) throws IOException {
+
+    /**
+     * Function to send a request
+     * @param link - url for the connection
+     * @param keyword - field to parse from the result
+     * @throws IOException
+     */
+    public static JSONArray Connection(String link, String keyword) throws IOException {
         boolean ok = false;
         JSONArray jsonOfGenres = null;
 
@@ -34,7 +43,7 @@ public class BackendUtil {
 
                 con.disconnect();
                 ok = true;
-            } catch (ParseException ignored) {}
+            } catch (Exception ignored) { }
         }
         return jsonOfGenres;
     }
